@@ -72,7 +72,7 @@ The terminal will display your **Local** and **Network** access URLs. Open them 
 
 ## 📸 Screenshots
 
-![App Interface](screenshot1.png)
+![App Interface](main_screenshot.png)
 
 
 ## 🛡️ License
