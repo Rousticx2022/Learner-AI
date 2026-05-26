@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learner AI - Contextual Notes Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1"><i class="bi bi-mortarboard-fill me-2"></i>Learner AI</span>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar: File Management -->
+            <div class="col-md-2">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0 small fw-bold">Materials</h5>
+                    </div>
+                    <div class="card-body p-2">
+                        <form id="uploadForm" class="mb-3">
+                            <input class="form-control form-control-sm mb-2" type="file" id="fileInput" multiple>
+                            <button type="submit" class="btn btn-primary btn-sm w-100" id="uploadBtn">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </form>
+                        <div id="fileList" class="list-group list-group-flush">
+                            {% if not documents %}
+                            <p class="text-muted small text-center empty-msg">None</p>
+                            {% endif %}
+                            {% for doc in documents %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-1 doc-item border-0">
+                                <div class="form-check flex-grow-1 text-truncate">
+                                    <input class="form-check-input doc-checkbox" type="checkbox" value="{{ doc.id }}" id="doc-{{ doc.id }}">
+                                    <label class="form-check-label small text-truncate" style="max-width: 80px;" for="doc-{{ doc.id }}" title="{{ doc.filename }}">
+                                        {{ doc.filename }}
+                                    </label>
+                                </div>
+                                <button class="btn btn-link btn-sm text-danger p-0 delete-doc" data-id="{{ doc.id }}">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content: Chat & Notes -->
+            <div class="col-md-7 transition-all" id="chatColumn">
+                <div class="card shadow-sm chat-card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Learning Chat</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" id="testMeBtn">
+                                <i class="bi bi-patch-question me-1"></i>Test Me
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="clearChat">Clear</button>
+                        </div>
+                    </div>
+                    <div class="card-body chat-container" id="chatContainer">
+                        <div class="text-center text-muted my-5">
+                            <i class="bi bi-chat-left-text fs-2"></i>
+                            <p class="mt-2">Select materials and ask anything.</p>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white p-3">
+                        <div class="input-group">
+                            <textarea class="form-control" id="promptInput" rows="1" placeholder="Type your question..."></textarea>
+                            <button class="btn btn-primary px-3" id="sendBtn">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Section (Tabbed View) -->
+            <div class="col-md-3 transition-all" id="quizColumn">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white p-0 border-bottom-0">
+                        <ul class="nav nav-tabs nav-fill" id="insightTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active small py-2" id="suggestions-tab" data-bs-toggle="tab" data-bs-target="#suggestions-pane" type="button" role="tab" aria-controls="suggestions-pane" aria-selected="true">
+                                    <i class="bi bi-lightbulb me-1"></i>Questions
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link small py-2" id="quiz-tab" data-bs-toggle="tab" data-bs-target="#quiz-pane" type="button" role="tab" aria-controls="quiz-pane" aria-selected="false">
+                                    <i class="bi bi-patch-question me-1"></i>Quiz
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body p-0 overflow-hidden d-flex flex-column">
+                        <div class="tab-content flex-grow-1 overflow-auto p-3" id="insightTabsContent">
+                            <!-- Suggested Questions Pane -->
+                            <div class="tab-pane fade show active" id="suggestions-pane" role="tabpanel" aria-labelledby="suggestions-tab" tabindex="0">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0 small fw-bold text-muted">Suggested for you</h6>
+                                    <button class="btn btn-link btn-sm text-decoration-none p-0" id="refreshSuggestions">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+                                <div id="suggestionsContainer">
+                                    <p class="text-muted small text-center my-3">Select materials to get suggestions.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Quiz Pane -->
+                            <div class="tab-pane fade" id="quiz-pane" role="tabpanel" aria-labelledby="quiz-tab" tabindex="0">
+                                <div id="quizContainer">
+                                    <div class="text-center text-muted my-5">
+                                        <i class="bi bi-patch-question fs-2 mb-2"></i>
+                                        <p class="small">Click "Test Me" in the chat header to start a quiz.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Video Player -->
+    <div id="videoOverlay" class="d-none shadow-lg rounded">
+        <div class="bg-dark text-white p-2 d-flex justify-content-between align-items-center rounded-top">
+            <span class="small fw-bold ms-2" id="videoTitle">Video Reference</span>
+            <button type="button" class="btn-close btn-close-white btn-sm" id="closeVideo"></button>
+        </div>
+        <video id="floatingPlayer" controls class="w-100 rounded-bottom">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
